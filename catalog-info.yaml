@@ -1,0 +1,25 @@
+apiVersion: harness.io/v1
+kind: Workflow
+identifier: manage_security_group_rules
+name: Manage Security Group Rules
+type: service
+owner: platform_engineering
+metadata:
+  orgIdentifier: cfg_sandbox_dev
+  projectIdentifier: cfgIDPproject
+  description: Add, modify, or remove security group rules for your application. Requires SYSID reviewer access. Every change raises a ServiceNow RITM and requires two-tier approval.
+  tags:
+    - security
+    - self-service
+    - security-groups
+  icon: lock
+  actionButton:
+    label: Manage Security Group Rules
+spec:
+  type: workflow
+  lifecycle: production
+  owner: platform_engineering
+  links:
+    - url: https://app.harness.io
+      title: Harness Pipeline
+      icon: dashboard

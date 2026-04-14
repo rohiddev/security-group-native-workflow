@@ -1,0 +1,5 @@
+.DS_Store
+.idea/
+mock-api/vendor/
+mock-api/*.exe
+mock-api/mock-api

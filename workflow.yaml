@@ -1,0 +1,287 @@
+apiVersion: harness.io/v1
+kind: Workflow
+identifier: manage_security_group_rules
+name: Manage Security Group Rules
+type: service
+owner: platform_engineering
+metadata:
+  orgIdentifier: cfg_sandbox_dev
+  projectIdentifier: cfgIDPproject
+  description: Add, modify, or remove security group rules for your application. Requires SYSID reviewer access.
+  tags:
+    - security
+    - self-service
+  icon: lock
+  actionButton:
+    label: Manage Security Group Rules
+spec:
+  userFieldMapping:
+    owner: email
+
+  parameters:
+    # ─── Page 1: Application and Security Group ───────────────────────────────
+    - title: Application and Security Group
+      required:
+        - applicationId
+        - accessCheck
+        - account
+        - region
+        - securityGroupId
+      properties:
+
+        token:
+          title: token
+          type: string
+          ui:field: HarnessAuthToken
+
+        applicationId:
+          title: Application (SYSID)
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/sysids
+            valueSelector: value
+            labelSelector: label
+          ui:placeholder: Application (SYSID) - select your application
+
+        sysidDetails:
+          title: sysidDetails
+          type: string
+          ui:field: SelectFieldFromApi
+          readonly: true
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/sysid/{{parameters.applicationId}}/details
+            valueSelector: value
+            labelSelector: label
+            setContextData:
+              sysidName: sysidName
+              sysidTier: sysidTier
+              reviewerGroup: reviewerGroup
+
+        sysidDisplay:
+          title: Application Details
+          type: string
+          ui:field: ContextViewer
+          getContextData: '{{formContext.sysidName}} — Tier: {{formContext.sysidTier}}'
+
+        accessCheck:
+          title: Reviewer Access
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/sysid/{{parameters.applicationId}}/reviewer-check
+            valueSelector: accessStatus
+            labelSelector: accessStatus
+            appendUser:
+              owner: query
+            setContextData:
+              accessStatus: accessStatus
+
+        accessGuidance:
+          title: ''
+          type: string
+          ui:field: ContextViewer
+          getContextData: 'Access required: {{formContext.reviewerGroup}}. Not a member? Submit a request via Manage AD Group Users.'
+
+        account:
+          title: Cloud Account
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/sysid/{{parameters.applicationId}}/accounts
+            valueSelector: value
+            labelSelector: label
+          ui:placeholder: Cloud Account - select account
+
+        region:
+          title: Region
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/accounts/{{parameters.account}}/regions
+            valueSelector: value
+            labelSelector: label
+          ui:placeholder: Region - select region
+
+        securityGroupId:
+          title: Security Group
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/sysid/{{parameters.applicationId}}/security-groups?account={{parameters.account}}&region={{parameters.region}}
+            valueSelector: value
+            labelSelector: label
+            setContextData:
+              sgName: sgName
+              sgDescription: sgDescription
+          ui:placeholder: Security Group - select security group
+
+        securityGroupDisplay:
+          title: Security Group Details
+          type: string
+          ui:field: ContextViewer
+          getContextData: '{{formContext.sgName}} — {{formContext.sgDescription}}'
+
+    # ─── Page 2: Rule Changes ─────────────────────────────────────────────────
+    - title: Rule Changes
+      properties:
+
+        currentRulesLoad:
+          title: currentRulesLoad
+          type: string
+          ui:field: SelectFieldFromApi
+          readonly: true
+          ui:options:
+            path: proxy/hoover-service/security-groups/mock-api/security-groups/{{parameters.securityGroupId}}/rules
+            valueSelector: value
+            labelSelector: label
+            setContextData:
+              ruleCount: ruleCount
+              rulesSummary: rulesSummary
+
+        currentRulesHeader:
+          title: Current Rules
+          type: string
+          ui:field: ContextViewer
+          getContextData: '{{formContext.ruleCount}} currently active on {{formContext.sgName}}'
+
+        rulesSummaryDisplay:
+          title: Active Rules
+          type: string
+          ui:field: ContextViewer
+          getContextData: '{{formContext.rulesSummary}}'
+
+        rulesToRemove:
+          title: Rules to Remove
+          description: Enter one Rule ID per line (e.g. sgr-001). Leave empty if adding only.
+          type: array
+          items:
+            type: string
+            ui:placeholder: Rule ID - e.g. sgr-001
+          ui:options:
+            orderable: false
+
+        rulesToAdd:
+          title: Rules to Add
+          description: Define each new rule. Leave empty if removing only.
+          type: array
+          items:
+            type: object
+            required:
+              - direction
+              - protocol
+              - portRange
+              - source
+            properties:
+              direction:
+                title: Direction
+                type: string
+                enum:
+                  - Inbound
+                  - Outbound
+              protocol:
+                title: Protocol
+                type: string
+                enum:
+                  - TCP
+                  - UDP
+                  - ICMP
+                  - All
+              portRange:
+                title: Port Range
+                type: string
+                description: e.g. 443, 8080-8090, All
+                ui:placeholder: Port Range - e.g. 443 or 8080-8090
+              source:
+                title: Source / Destination
+                type: string
+                description: CIDR, security group ID, or prefix list ID
+                ui:placeholder: Source - e.g. 10.0.0.0/8 or sg-0abc1234
+              description:
+                title: Description
+                type: string
+                description: Purpose of this rule — appears on the RITM
+                ui:placeholder: Description - what traffic does this rule allow
+
+    # ─── Page 3: Change Context ───────────────────────────────────────────────
+    - title: Change Context
+      required:
+        - changeDescription
+        - businessJustification
+        - changeWindow
+      properties:
+
+        changeDescription:
+          title: Change Description
+          type: string
+          description: What do these rule changes enable?
+          ui:widget: textarea
+          ui:placeholder: Change Description - what the changes enable
+
+        businessJustification:
+          title: Business Justification
+          type: string
+          description: Why is this change needed?
+          ui:widget: textarea
+          ui:placeholder: Business Justification - why the change is required
+
+        changeWindow:
+          title: Change Window
+          type: string
+          enum:
+            - Next Maintenance Window
+            - Emergency
+            - Scheduled Date
+          ui:placeholder: Change Window - select timing
+
+        requestorDisplay:
+          title: Submitting As
+          type: string
+          ui:field: ContextViewer
+          getContextData: 'Submitting as: {{formContext.owner}}'
+
+      dependencies:
+        changeWindow:
+          oneOf:
+            - properties:
+                changeWindow:
+                  enum:
+                    - Next Maintenance Window
+                    - Emergency
+            - properties:
+                changeWindow:
+                  enum:
+                    - Scheduled Date
+                scheduledDate:
+                  title: Scheduled Date
+                  type: string
+                  description: Target date for the change (YYYY-MM-DD)
+                  ui:placeholder: Scheduled Date - YYYY-MM-DD
+              required:
+                - scheduledDate
+
+  steps:
+    - id: trigger_pipeline
+      name: Trigger Security Group Change Pipeline
+      action: trigger:harness-custom-pipeline
+      input:
+        pipelineId: security_group_change_pipeline
+        orgIdentifier: cfg_sandbox_dev
+        projectIdentifier: cfgIDPproject
+        inputValues:
+          token: ${{ parameters.token }}
+          sysId: ${{ parameters.applicationId }}
+          accountId: ${{ parameters.account }}
+          region: ${{ parameters.region }}
+          securityGroupId: ${{ parameters.securityGroupId }}
+          rulesToAdd: ${{ parameters.rulesToAdd | dump }}
+          rulesToRemove: ${{ parameters.rulesToRemove | dump }}
+          changeDescription: ${{ parameters.changeDescription }}
+          businessJustification: ${{ parameters.businessJustification }}
+          changeWindow: ${{ parameters.changeWindow }}
+          scheduledDate: ${{ parameters.scheduledDate or '' }}
+
+  output:
+    links:
+      - title: Pipeline Execution
+        url: ${{ steps.trigger_pipeline.output.url }}
