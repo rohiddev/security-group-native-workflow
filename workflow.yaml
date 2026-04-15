@@ -62,7 +62,8 @@ spec:
           title: Application Details
           type: string
           ui:field: ContextViewer
-          getContextData: '{{formContext.sysidName}} — Tier: {{formContext.sysidTier}}'
+          ui:options:
+            getContextData: '{{formContext.sysidName}} — Tier: {{formContext.sysidTier}}'
 
         accessCheck:
           title: Reviewer Access
@@ -81,7 +82,8 @@ spec:
           title: ''
           type: string
           ui:field: ContextViewer
-          getContextData: 'Access required: {{formContext.reviewerGroup}}. Not a member? Submit a request via Manage AD Group Users.'
+          ui:options:
+            getContextData: 'Access required: {{formContext.reviewerGroup}}. Not a member? Submit a request via Manage AD Group Users.'
 
         account:
           title: Cloud Account
@@ -120,7 +122,8 @@ spec:
           title: Security Group Details
           type: string
           ui:field: ContextViewer
-          getContextData: '{{formContext.sgName}} — {{formContext.sgDescription}}'
+          ui:options:
+            getContextData: '{{formContext.sgName}} — {{formContext.sgDescription}}'
 
     # ─── Page 2: Rule Changes ─────────────────────────────────────────────────
     - title: Rule Changes
@@ -143,13 +146,15 @@ spec:
           title: Current Rules
           type: string
           ui:field: ContextViewer
-          getContextData: '{{formContext.ruleCount}} currently active on {{formContext.sgName}}'
+          ui:options:
+            getContextData: '{{formContext.ruleCount}} currently active on {{formContext.sgName}}'
 
         rulesSummaryDisplay:
           title: Active Rules
           type: string
           ui:field: ContextViewer
-          getContextData: '{{formContext.rulesSummary}}'
+          ui:options:
+            getContextData: '{{formContext.rulesSummary}}'
 
         rulesToRemove:
           title: Rules to Remove
@@ -238,7 +243,8 @@ spec:
           title: Submitting As
           type: string
           ui:field: ContextViewer
-          getContextData: 'Submitting as: {{formContext.owner}}'
+          ui:options:
+            getContextData: 'Submitting as: {{formContext.owner}}'
 
       dependencies:
         changeWindow:
